@@ -1,0 +1,49 @@
+#include "mbed.h"
+#include <PwmOut.h>
+
+PwmOut Pulse_A(A1);
+PwmOut Pulse_B(A3);
+float alpha_A;
+float alpha_B;
+
+float P = (0.02);
+
+char cmd[6];
+int angle, nb_values;
+float rapport;
+
+Serial pc(USBTX, USBRX);
+
+//---ISR associée à la réception
+void rxCallback() {
+    pc.gets(cmd, 6);
+    nb_values=sscanf(cmd, "%*s %d", &angle);
+    if(nb_values!=1 || angle>180)
+    {
+        cmd[0]=0;
+        angle=0;
+    }
+    pc.printf("%d ", angle);
+    if(cmd[0]=='A') {
+        rapport = (angle/180.0)*0.094+0.037;
+        pc.printf("%f \n", rapport);
+        Pulse_A.write(rapport);
+    }
+    else if(cmd[0]=='B') {
+        rapport = (angle/180.0)*0.041+0.05;
+        pc.printf("%f \n", rapport);
+        Pulse_B.write(rapport);
+    }
+    
+}
+
+int main() {
+    
+    pc.baud(9600);
+    pc.printf("start\n");
+    pc.attach( &rxCallback, pc.RxIrq);
+    
+    
+    Pulse_A.period(P);
+    Pulse_B.period(P);
+} 
